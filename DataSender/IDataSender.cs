@@ -15,6 +15,6 @@ namespace DataSender
     /// </summary>
     public interface IDataSender
     {
-        void SendData(string data);
+        void SendData(string[] data);
     }
 }

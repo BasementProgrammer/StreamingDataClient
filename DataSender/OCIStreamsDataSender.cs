@@ -14,27 +14,29 @@ namespace DataSender
         // OCI Streams client and configuration
         ConfigFileAuthenticationDetailsProvider _config;
         StreamClient _client;
-        public OCIStreamsDataSender()
+        StreamConfig _streamConfig;
+        public OCIStreamsDataSender(StreamConfig streamConfig)
         {
             // Initialize OCI Streams client
-            _config = new ConfigFileAuthenticationDetailsProvider("WORK");
-            _client = new Oci.StreamingService.StreamClient(_config);
-            _client.SetEndpoint("https://cell-1.streaming.us-ashburn-1.oci.oraclecloud.com");
+            streamConfig = _streamConfig;
+            _config = new ConfigFileAuthenticationDetailsProvider(_streamConfig.ProfileName);
+            _client = new StreamClient(_config);
+            _client.SetEndpoint(_streamConfig.EndpointConfiguration);
         }
-        public void SendData(string data)
+        public void SendData(string[] data)
         {
             try
             {
                 List<PutMessagesDetailsEntry> messages = new List<PutMessagesDetailsEntry>();
-
-                // We can send more than one message at a time here....
-                PutMessagesDetailsEntry detailsEntry = new PutMessagesDetailsEntry
+                foreach (string message in data)
                 {
-                    Key = Encoding.UTF8.GetBytes($"data"),
-                    Value = Encoding.UTF8.GetBytes(data)
-                };
-                messages.Add(detailsEntry);
-
+                    PutMessagesDetailsEntry detailsEntry = new PutMessagesDetailsEntry
+                    {
+                        Key = Encoding.UTF8.GetBytes($"data"),
+                        Value = Encoding.UTF8.GetBytes(message)
+                    };
+                    messages.Add(detailsEntry);
+                }
 
                 PutMessagesDetails messagesDetails = new PutMessagesDetails
                 {
@@ -42,7 +44,7 @@ namespace DataSender
                 };
                 PutMessagesRequest putRequest = new PutMessagesRequest
                 {
-                    StreamId = "ocid1.stream.oc1.iad.amaaaaaafvqkqmqaqe7pq72n7ob6qe7xwgfi6i5kcuzldm6hbr3ad5rpr7aa",
+                    StreamId = _streamConfig.StreamId,
                     PutMessagesDetails = messagesDetails
                 };
                 var response = _client.PutMessages(putRequest);
@@ -71,6 +73,7 @@ namespace DataSender
                 Console.WriteLine($"Error sending data to OCI Streams: {ex.Message}");
             }
         }
+        
 
         // Dispose of the client when done
         public void Dispose()
