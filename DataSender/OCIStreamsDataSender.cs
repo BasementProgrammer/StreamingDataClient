@@ -18,7 +18,7 @@ namespace DataSender
         public OCIStreamsDataSender(StreamConfig streamConfig)
         {
             // Initialize OCI Streams client
-            streamConfig = _streamConfig;
+            _streamConfig = streamConfig;
             _config = new ConfigFileAuthenticationDetailsProvider(_streamConfig.ProfileName);
             _client = new StreamClient(_config);
             _client.SetEndpoint(_streamConfig.EndpointConfiguration);
