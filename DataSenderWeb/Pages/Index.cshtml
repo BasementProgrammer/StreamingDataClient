@@ -1,0 +1,121 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+<form method="Post">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h1 class="display-4">Data Sender Web App</h1>
+                <p>Use this page to send data to the Data Receiver Web App.</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p>Enter the number of clients to simulate:</p>
+                <input type="number" id="numberOfClients" name="numberOfClients" class="form-control mb-2" />
+                <p>Enter the number of messages to send:</p>
+                <input type="number" id="numberOfMessages" name="numberOfMessages" class="form-control mb-2" />
+                <p>Enter the delay between messages (in milliseconds):</p>
+                <input type="number" id="messageDelay" name="messageDelay" class="form-control mb-2" />
+            </div>
+            <div class="col-md-6">
+                <!-- Right column content -->
+                <p>Data to send (JSON format):</p>
+            <textarea type="text" id="dataToSend" name="dataToSend" readonly="readonly" rows="10" cols="50" class="form-control mb-2">
+
+                </textarea>
+
+                <!-- 
+                {
+                    "clientId": 1,
+                    "messageId": 2,
+                    "timestamp": "%%timeStamp%%",
+                    "data": "Data Message Message %%messageId%%.",
+                    "source": "DataSenderWeb - Client %%clientId%%"
+                 } 
+                 -->
+
+                <select id="extraData" name="dataConfiguration" onchange="updateDataToSend()">
+                    <option value="Default">Default</option>
+                    <option value="Temperature">Temperature</option>
+                </select>
+            </div>
+        </div>
+        <div class="row" id="tempDataDiv" hidden="hidden">
+            <div class="col-md-12 text-left">
+                <p>Enter temperature data (in Celsius):</p>
+                <input id="temperatureData" type="number" name="temperatureData" class="form-control mb-2" />
+            </div>
+        </div>
+
+        
+        <div class="row">
+            <div class="col-md-12 text-left">
+                <button id="sendDataButton" class="btn btn-primary" asp-page-handler="SendDataToStream">Send Data</button>
+            </div>
+        </div>
+        
+
+
+    </div>
+
+
+<script>
+    //Create a function to populate fields on document load
+    document.addEventListener("DOMContentLoaded", function() {
+        setDefaultValues ();
+    });
+
+    function setDefaultValues () {
+        var numberOfClients = document.getElementById("numberOfClients");
+        var numberOfMessages = document.getElementById("numberOfMessages");
+        var messageDelay = document.getElementById("messageDelay");
+        var temperatureData = document.getElementById("temperatureData");
+        var dataToSend = document.getElementById("dataToSend");
+
+
+        numberOfClients.value = 10;
+        numberOfMessages.value = 100;
+        messageDelay.value = 1000;
+        temperatureData.value = 50;
+        dataToSend.value = '{\n"clientId": 1000,\n"messageId": 2,\n"timestamp": "%%timeStamp%%",\n"data": "Temperature Data Message %%messageId%%.",\n"source": "DataSenderWeb - Client %%clientId%%"\n}';
+    }
+
+    function updateDataToSend() {
+
+        
+
+
+        var numberOfClients = document.getElementById("numberOfClients");
+        var numberOfMessages = document.getElementById("numberOfMessages");
+        var messageDelay = document.getElementById("messageDelay");
+        var temperatureData = document.getElementById("temperatureData");
+        var dataToSend = document.getElementById("dataToSend");
+            
+        var extraData = document.getElementById("extraData");
+        var selectedValue = extraData.value;
+
+        var tempDataDiv = document.getElementById("tempDataDiv")
+
+
+        switch (selectedValue) {
+            case "Default":
+                dataToSend.value = '{\n"clientId": 1,\n"messageId": 2,\n"timestamp": "%%timeStamp%%",\n"data": "Data Message Message %%messageId%%.",\n"source": "DataSenderWeb - Client %%clientId%%"\n}';
+                tempDataDiv.hidden = true;
+                break;
+            case "Temperature":
+                dataToSend.value = '{\n"clientId": 1000,\n"messageId": 2,\n"timestamp": "%%timeStamp%%",\n"data": "Temperature Data Message %%messageId%%.",\n"source": "DataSenderWeb - Client %%clientId%%",\n"temperature": %%temp%%\n}';
+                tempDataDiv.hidden = false;
+                temperatureData.value = 10;
+                break;
+            default:
+                alert("Unknown data configuration selected.");
+        }
+    }
+   
+
+</script>
+
+</form>

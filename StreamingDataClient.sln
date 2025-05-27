@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data Sender", "Data Sender"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSenderTestApp", "DataSenderTestApp\DataSenderTestApp.csproj", "{85BC0559-BDEA-4CB6-80A9-23D8CECBD618}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataSenderWeb", "DataSenderWeb\DataSenderWeb.csproj", "{A8525FD5-B1BD-461B-A084-629667DFF171}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +32,10 @@ Global
 		{85BC0559-BDEA-4CB6-80A9-23D8CECBD618}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85BC0559-BDEA-4CB6-80A9-23D8CECBD618}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85BC0559-BDEA-4CB6-80A9-23D8CECBD618}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8525FD5-B1BD-461B-A084-629667DFF171}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8525FD5-B1BD-461B-A084-629667DFF171}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8525FD5-B1BD-461B-A084-629667DFF171}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8525FD5-B1BD-461B-A084-629667DFF171}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -37,6 +43,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{25A262ED-BFF7-47A8-B142-8AF90DF2CA16} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{85BC0559-BDEA-4CB6-80A9-23D8CECBD618} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{A8525FD5-B1BD-461B-A084-629667DFF171} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {204036B9-EE42-474B-A0CC-F594345E1275}
