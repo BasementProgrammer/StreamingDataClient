@@ -48,7 +48,6 @@ namespace DataSender
                     PutMessagesDetails = messagesDetails
                 };
                 var response = _client.PutMessages(putRequest);
-
                 PutMessagesResponse putResponse = response.Result;
 
                 // the putResponse can contain some useful metadata for handling failures
