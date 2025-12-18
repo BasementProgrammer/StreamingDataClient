@@ -10,26 +10,14 @@ namespace DataSender
 {
     public class OCIStreamsDataSender : IDataSender, IDisposable
     {
-
-        // OCI Streams client and configuration
-        IBasicAuthenticationDetailsProvider _config;
         StreamClient _client;
         StreamConfig _streamConfig;
         public OCIStreamsDataSender(StreamConfig streamConfig)
         {
             // Initialize OCI Streams client
             _streamConfig = streamConfig;
-            try
-            {
-                _config = ResourcePrincipalAuthenticationDetailsProvider.GetProvider();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error initializing Instance Principals authentication: {ex.Message}");
-                // Fallback to config file authentication
-                _config = new ConfigFileAuthenticationDetailsProvider(_streamConfig.ProfileName);
-            }
-            _client = new StreamClient(_config);
+
+            _client = new StreamClient(_streamConfig.AuthenticationProvider);
             _client.SetEndpoint(_streamConfig.EndpointConfiguration);
         }
         public void SendData(string[] data)

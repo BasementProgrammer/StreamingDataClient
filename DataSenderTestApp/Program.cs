@@ -36,7 +36,7 @@ namespace DataSenderTestApp
                 .Build();
             */
 
-            StreamConfig config = new StreamConfig
+            StreamConfig config = new StreamConfig (appConfig)
             {
                 ProfileName = appConfig.GetValue<String>("ProfileName"),
                 EndpointConfiguration = appConfig.GetValue<String>("EndpointConfiguration"),

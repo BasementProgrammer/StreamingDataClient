@@ -22,6 +22,7 @@ namespace DataSenderWeb.Pages
         private readonly ILogger<IndexModel> _logger;
         private readonly IConfiguration _appConfig;
         private readonly IBasicAuthenticationDetailsProvider _config;
+        private readonly StreamConfig _streamConfig;
 
         public IndexModel(ILogger<IndexModel> logger) : base()
         {
@@ -36,65 +37,23 @@ namespace DataSenderWeb.Pages
                 .Build();
             _appConfig = host.Services.GetRequiredService<IConfiguration>();
 
-            
-            try
-            {
-                _config = ResourcePrincipalAuthenticationDetailsProvider.GetProvider();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error initializing Instance Principals authentication: {ex.Message}");
-                // Fallback to config file authentication
-                _config = new ConfigFileAuthenticationDetailsProvider("DEFAULT");
-            }
-
-            string vaultId;
-            vaultId = Environment.GetEnvironmentVariable("VaultID");
-
-            StreamId = populateConfigFromVault("StreamId", vaultId);
-            EndpointConfiguration = populateConfigFromVault("EndpointConfiguration", vaultId);
+            _streamConfig = new StreamConfig(_appConfig);
         }
 
-        private string populateConfigFromVault(string secretName, string vaultId)
+        public string StreamId
         {
-            var client = new Oci.SecretsService.SecretsClient(_config);
-            var vaultClient = new Oci.VaultService.VaultsClient(_config);
-
-
-            var getSecretBundleByNameRequest = new GetSecretBundleByNameRequest
+            get
             {
-                SecretName = secretName,
-                VaultId = vaultId,
-            };
-
-            var secretResponce = client.GetSecretBundleByName(getSecretBundleByNameRequest).Result;
-            var secretBundle = secretResponce.SecretBundle;
-            Base64SecretBundleContentDetails secretBundleContent = (Base64SecretBundleContentDetails)secretBundle.SecretBundleContent;
-            var content = secretBundleContent.Content;
-            var decodedBytes = Convert.FromBase64String(content);
-
-            return Encoding.UTF8.GetString(decodedBytes);
+                return _streamConfig.StreamId;
+            }
         }
-
-        private string populateConfigFromVault(string value)
+        public string EndpointConfiguration 
         {
-            var client = new Oci.SecretsService.SecretsClient(_config);
-            GetSecretBundleRequest getSecretBundleRequest = new GetSecretBundleRequest
+            get 
             {
-                SecretId = value
-            };
-            var secretResponce = client.GetSecretBundle(getSecretBundleRequest).Result;
-            var secretBundle = secretResponce.SecretBundle;
-            Base64SecretBundleContentDetails secretBundleContent = (Base64SecretBundleContentDetails)secretBundle.SecretBundleContent;
-            var content = secretBundleContent.Content;
-            var decodedBytes = Convert.FromBase64String(content);
-
-            return Encoding.UTF8.GetString(decodedBytes);
+                return _streamConfig.EndpointConfiguration;
+            }
         }
-
-        public string StreamId { get; set; }
-        public string ProfileName { get; set; }
-        public string EndpointConfiguration { get; set; }
 
         public Dictionary<string, string> ConvertFormCollectionToDictionary(IFormCollection formCollection)
         {
@@ -104,13 +63,6 @@ namespace DataSenderWeb.Pages
 
         public IActionResult OnPostSendDataToStream (IFormCollection formCollection)
          {
-            // Create a StreamConfig object from the configuration
-            StreamConfig config = new StreamConfig
-            {
-                ProfileName = formCollection["ProfileName"],
-                EndpointConfiguration = formCollection["EndpointConfiguration"],
-            };
-
             Dictionary<string, string> formParameters = ConvertFormCollectionToDictionary(formCollection);
 
             // get the values from the form
@@ -142,7 +94,7 @@ namespace DataSenderWeb.Pages
                 for (int i = 0; i < numberOfClients; i++)
                 {
                     // Create a new data sender for each client
-                    dataSenders.Add(new OCIStreamsDataSender(config));
+                    dataSenders.Add(new OCIStreamsDataSender(_streamConfig));
                 }
 
                 Random random = new Random();
