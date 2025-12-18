@@ -12,14 +12,23 @@ namespace DataSender
     {
 
         // OCI Streams client and configuration
-        ConfigFileAuthenticationDetailsProvider _config;
+        IBasicAuthenticationDetailsProvider _config;
         StreamClient _client;
         StreamConfig _streamConfig;
         public OCIStreamsDataSender(StreamConfig streamConfig)
         {
             // Initialize OCI Streams client
             _streamConfig = streamConfig;
-            _config = new ConfigFileAuthenticationDetailsProvider(_streamConfig.ProfileName);
+            try
+            {
+                _config = ResourcePrincipalAuthenticationDetailsProvider.GetProvider();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing Instance Principals authentication: {ex.Message}");
+                // Fallback to config file authentication
+                _config = new ConfigFileAuthenticationDetailsProvider(_streamConfig.ProfileName);
+            }
             _client = new StreamClient(_config);
             _client.SetEndpoint(_streamConfig.EndpointConfiguration);
         }
@@ -70,6 +79,7 @@ namespace DataSender
             {
                 // Handle exceptions
                 Console.WriteLine($"Error sending data to OCI Streams: {ex.Message}");
+                throw;
             }
         }
         

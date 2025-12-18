@@ -8,6 +8,10 @@ namespace DataSender
 {
     public class StreamConfig
     {
+        public StreamConfig()
+        {
+            ProfileName = "DEFAULT";
+        }
         /// <summary>
         /// The name of the cloud profile to use for authentication.
         /// </summary>

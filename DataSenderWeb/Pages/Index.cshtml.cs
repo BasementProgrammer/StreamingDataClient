@@ -1,8 +1,19 @@
 using DataSender;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Server.Kestrel;
+using Oci.Common;
+using Oci.Common.Auth;
+using Oci.SecretsService.Models;
+using Oci.SecretsService.Requests;
+using Oci.VaultService.Models;
+using Oci.VaultService.Requests;
+using Oci.VaultService.Responses;
 using System.ComponentModel;
 using System.Reflection.Metadata;
+using System.Security.Cryptography;
+using System.Text;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace DataSenderWeb.Pages
 {
@@ -10,6 +21,7 @@ namespace DataSenderWeb.Pages
     {
         private readonly ILogger<IndexModel> _logger;
         private readonly IConfiguration _appConfig;
+        private readonly IBasicAuthenticationDetailsProvider _config;
 
         public IndexModel(ILogger<IndexModel> logger) : base()
         {
@@ -25,15 +37,70 @@ namespace DataSenderWeb.Pages
             _appConfig = host.Services.GetRequiredService<IConfiguration>();
 
             
-            StreamId = _appConfig.GetValue<string>("StreamId");
-            ProfileName =_appConfig.GetValue<string>("ProfileName");
-            EndpointConfiguration = _appConfig.GetValue<string>("EndpointConfiguration");
+            try
+            {
+                _config = ResourcePrincipalAuthenticationDetailsProvider.GetProvider();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing Instance Principals authentication: {ex.Message}");
+                // Fallback to config file authentication
+                _config = new ConfigFileAuthenticationDetailsProvider("DEFAULT");
+            }
 
+            string vaultId;
+            vaultId = Environment.GetEnvironmentVariable("VaultID");
+
+            StreamId = populateConfigFromVault("StreamId", vaultId);
+            EndpointConfiguration = populateConfigFromVault("EndpointConfiguration", vaultId);
+        }
+
+        private string populateConfigFromVault(string secretName, string vaultId)
+        {
+            var client = new Oci.SecretsService.SecretsClient(_config);
+            var vaultClient = new Oci.VaultService.VaultsClient(_config);
+
+
+            var getSecretBundleByNameRequest = new GetSecretBundleByNameRequest
+            {
+                SecretName = secretName,
+                VaultId = vaultId,
+            };
+
+            var secretResponce = client.GetSecretBundleByName(getSecretBundleByNameRequest).Result;
+            var secretBundle = secretResponce.SecretBundle;
+            Base64SecretBundleContentDetails secretBundleContent = (Base64SecretBundleContentDetails)secretBundle.SecretBundleContent;
+            var content = secretBundleContent.Content;
+            var decodedBytes = Convert.FromBase64String(content);
+
+            return Encoding.UTF8.GetString(decodedBytes);
+        }
+
+        private string populateConfigFromVault(string value)
+        {
+            var client = new Oci.SecretsService.SecretsClient(_config);
+            GetSecretBundleRequest getSecretBundleRequest = new GetSecretBundleRequest
+            {
+                SecretId = value
+            };
+            var secretResponce = client.GetSecretBundle(getSecretBundleRequest).Result;
+            var secretBundle = secretResponce.SecretBundle;
+            Base64SecretBundleContentDetails secretBundleContent = (Base64SecretBundleContentDetails)secretBundle.SecretBundleContent;
+            var content = secretBundleContent.Content;
+            var decodedBytes = Convert.FromBase64String(content);
+
+            return Encoding.UTF8.GetString(decodedBytes);
         }
 
         public string StreamId { get; set; }
         public string ProfileName { get; set; }
         public string EndpointConfiguration { get; set; }
+
+        public Dictionary<string, string> ConvertFormCollectionToDictionary(IFormCollection formCollection)
+        {
+            return formCollection.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
+        }
+
 
         public IActionResult OnPostSendDataToStream (IFormCollection formCollection)
          {
@@ -42,22 +109,23 @@ namespace DataSenderWeb.Pages
             {
                 ProfileName = formCollection["ProfileName"],
                 EndpointConfiguration = formCollection["EndpointConfiguration"],
-                StreamId = formCollection["StreamId"]
             };
 
+            Dictionary<string, string> formParameters = ConvertFormCollectionToDictionary(formCollection);
+
             // get the values from the form
-            int numberOfClients = int.Parse(formCollection["numberOfClients"]);
-            int numberOfMessages = int.Parse(formCollection["numberOfMessages"]);
-            int messageDelay = int.Parse(formCollection["messageDelay"]);
-            string dataToSend = formCollection["dataToSend"];
+            int numberOfClients = int.Parse(formParameters["numberOfClients"]);
+            int numberOfMessages = int.Parse(formParameters["numberOfMessages"]);
+            int messageDelay = int.Parse(formParameters["messageDelay"]);
+            string dataToSend = formParameters["dataToSend"];
             dataToSend = dataToSend.Trim();
 
-            double minimumNormalTemp = double.Parse(formCollection["minimumNormalTemp"]);
-            double maximumNormalTemp = double.Parse(formCollection["maximumNormalTemp"]);
-            double minimumErrorTemp = double.Parse(formCollection["minimumErrorTemp"]);
-            double maximumErrorTemp = double.Parse(formCollection["maximumErrorTemp"]);
-            double tempErrorRate = double.Parse(formCollection["tempErrorRate"]);
-            string dataConfiguration = formCollection["dataConfiguration"];
+            double minimumNormalTemp = double.Parse(formParameters["minimumNormalTemp"]);
+            double maximumNormalTemp = double.Parse(formParameters["maximumNormalTemp"]);
+            double minimumErrorTemp = double.Parse(formParameters["minimumErrorTemp"]);
+            double maximumErrorTemp = double.Parse(formParameters["maximumErrorTemp"]);
+            double tempErrorRate = double.Parse(formParameters["tempErrorRate"]);
+            string dataConfiguration = formParameters["dataConfiguration"];
 
             // Variables to replace
             // %%timeStamp%% - DateTime.Now.ToString("o")
@@ -65,10 +133,6 @@ namespace DataSenderWeb.Pages
             // %%clientId%% - The number for the particular client
 
             int totalNumberOfMessages = numberOfClients * numberOfMessages;
-
-
-
-
 
             // Create a collection of data sender objects
             IList<IDataSender> dataSenders = new List<IDataSender>();
@@ -110,7 +174,7 @@ namespace DataSenderWeb.Pages
                             .Replace("%%temp%%", reportingTemp.ToString())
                             .Replace("%%clientId%%", (j + 1).ToString());
                         // Send the message using the current data sender
-                        dataSenders[i].SendData(new[] { message });
+                        dataSenders[j].SendData(new[] { message });
                     }
                     // Delay if specified
                     if (messageDelay > 0)
